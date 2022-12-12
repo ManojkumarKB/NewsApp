@@ -23,3 +23,5 @@ Dependency
 4) Lifecycle  dependencies
 5) com.intuit.sdp dependency for widget sizes adjustable for all screen sizes
 6) swipe refresh layout dependency
+
+Architecture used is MVVM
