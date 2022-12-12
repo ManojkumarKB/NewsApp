@@ -5,6 +5,7 @@ News app top stories will be get listed
 3) Viewing the Type and Title can be done by clicking the top story id.
 4) Saving the top stories list in locally using Room db which helps to view the list without Internet Connection.
 5) Will work on both landscape and potrait mode.
+6) Pull to refresh option is available.
 
 Commit History
 1) Commit while creating the project
