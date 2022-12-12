@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.example.hackersnewsapp.dao.AppDao
 import com.example.hackersnewsapp.dao.AppResponse
 import com.example.hackersnewsapp.dao.ResponseStatus
@@ -16,82 +17,87 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
+import retrofit2.HttpException
 import retrofit2.Response
+import java.io.IOException
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
-    /*fun insertData(model:TopStories){
-        GlobalScope.launch {
-            getDatabase(AppDatabase.context).appDao().insertItems(model)
-        }
-    }*/
-
     private var topStoryLiveData = MutableLiveData<TopStoryEntity>()
-    private var storyLiveData = MutableLiveData<Story>()
-    private var topStoryDao:AppDao = AppDatabase.getDatabase((getApplication())).appDao()
+    private var topStoryDao: AppDao = AppDatabase.getDatabase((getApplication())).appDao()
 
-    fun insertTopStory(entity: TopStoryEntity){
-
-        GlobalScope.launch {
-            topStoryDao?.insertItems(entity)
+    fun insertTopStory(entity: TopStoryEntity) {
+        viewModelScope.launch {
+            topStoryDao.insertItems(entity)
             getTopStoriesFromRoomDb()
         }
     }
 
     fun getTopStoriesFromRoomDb() {
 
-        GlobalScope.launch {
+        viewModelScope.launch {
             val list = topStoryDao?.getAllTopStory()
-            topStoryLiveData.postValue(list?.let {
-                it
-            }?:TopStoryEntity(1,ArrayList()))
+            if ((list?.topStoryId == null) || (list.topStoryId?.isEmpty()!!)) {
+                topStoryLiveData.postValue(TopStoryEntity(1, ArrayList()))
+            } else {
+                topStoryLiveData.postValue(list.let { it })
+            }
         }
 
     }
 
-    fun getTopStoriesFromApi(){
+    fun getTopStoriesFromApi() {
 
-        TopStoryRepository.api.getTopStories().enqueue(object  : Callback<List<String>> {
+        TopStoryRepository.api.getTopStories().enqueue(object : Callback<List<String>> {
             override fun onResponse(call: Call<List<String>>, response: Response<List<String>>) {
-                if(response.isSuccessful){
-                    if (response.body()!=null){
-                        insertTopStory(TopStoryEntity(ResponseStatus.SUCCESS,response.body()!!))
-                    }else{
-                        val l = listOf("Something went wrong")
+                if (response.isSuccessful) {
+                    if (response.body() != null) {
+                        // if response is successfull, store data in room db
+                        insertTopStory(TopStoryEntity(ResponseStatus.SUCCESS, response.body()!!))
+                    } else {
+                        //if response body coming null post it as Fail with message
+                        val l = listOf("Something went wrong!")
                         topStoryLiveData.postValue(TopStoryEntity(ResponseStatus.FAIL, l))
                     }
-                }else{
-                    val l = listOf(response.message()?:"Something went wrong")
+                } else {
+                    //if response is not successful post it as Fail with message
+                    val l = listOf(response.message() ?: "Something went wrong!")
                     topStoryLiveData.postValue(TopStoryEntity(ResponseStatus.FAIL, l))
                 }
             }
+
             override fun onFailure(call: Call<List<String>>, t: Throwable) {
-                Log.d("MainViewModel",t.message.toString())
-                val l = listOf(t.message?:"Something went wrong")
+                //is response is failure, passing the correct error message for user
+                val errorMessage = when (t) {
+                    is IOException -> "No internet connection"
+                    is HttpException -> "Something went wrong!"
+                    else -> t.localizedMessage
+                }
+
+                val l = listOf(errorMessage ?: "Something went wrong!")
                 topStoryLiveData.postValue(TopStoryEntity(ResponseStatus.FAIL, l))
             }
         })
     }
 
-    fun observeTopStoryLiveData() : LiveData<TopStoryEntity> {
+    fun observeTopStoryLiveData(): LiveData<TopStoryEntity> {
         return topStoryLiveData
     }
 
-    fun observeStoryLiveData() : LiveData<Story> {
-        return storyLiveData
-    }
-
-    fun getStoryFromApi(id:String): MutableLiveData<AppResponse<Any>>{
+    fun getStoryFromApi(id: String): MutableLiveData<AppResponse<Any>> {
         val responseData = MutableLiveData<AppResponse<Any>>()
-        TopStoryRepository.api.getStory(id).enqueue(object :Callback<Story>{
+
+        TopStoryRepository.api.getStory(id).enqueue(object : Callback<Story> {
             override fun onResponse(call: Call<Story>, response: Response<Story>) {
-                if(response.isSuccessful){
+                if (response.isSuccessful) {
                     responseData.value = AppResponse.success(response.body() as Story)
-                }else{
-                    responseData.value = AppResponse.failure(response.message()?:"Someting went wrong")
+                } else {
+                    responseData.value =
+                        AppResponse.failure(response.message() ?: "Someting went wrong")
                 }
-                Log.d("MainViewModel",response.body()?.title.toString())
+                Log.d("MainViewModel", response.body()?.title.toString())
             }
+
             override fun onFailure(call: Call<Story>, t: Throwable) {
                 responseData.value = AppResponse.error(t)
             }

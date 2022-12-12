@@ -1,5 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">HackersNewsApp</string>
     <string name="txt_type">Type</string>
     <string name="txt_no_top_stories_found">No top stories found</string>
     <string name="txt_something_went_wrong">Something went wrong</string>

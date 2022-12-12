@@ -11,4 +11,6 @@
     <color name="blue">#0000FF</color>
     <color name="red">#FF0000</color>
     <color name="neon_red">#FF3131</color>
+    <color name="yellow">#FFD700</color>
+    <color name="green">#89AB0D</color>
 </resources>

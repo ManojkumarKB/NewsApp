@@ -7,6 +7,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_marginTop="@dimen/_10sdp"
     android:layout_marginStart="@dimen/_10sdp"
+    android:layout_marginEnd="@dimen/_3sdp"
     >
 
     <TextView
@@ -22,6 +23,7 @@
         android:background="@drawable/rounded_corner"
         android:gravity="center"
         android:textColor="@color/white"
-        android:textSize="@dimen/_14sdp"/>
+        android:textSize="@dimen/_14sdp"
+        android:elevation="@dimen/_6sdp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
